@@ -156,15 +156,33 @@ namespace SDDM {
 
             // start display server
             QStringList args = mainConfig.X11.ServerArguments.get().split(QLatin1Char(' '), QString::SkipEmptyParts);
-            args << QStringLiteral("-auth") << m_authPath
-                 << QStringLiteral("-background") << QStringLiteral("none")
-                 << QStringLiteral("-noreset")
-                 << QStringLiteral("-displayfd") << QString::number(pipeFds[1])
-                 << QStringLiteral("-seat") << displayPtr()->seat()->name();
-
-            if (displayPtr()->seat()->name() == QLatin1String("seat0")) {
-                args << QStringLiteral("vt%1").arg(displayPtr()->terminalId());
+            if (mainConfig.X11.EnableNesting.get()) {
+                m_display = QStringLiteral(":") +
+                            QString::number(displayPtr()->seat()->name().mid(4).toInt() + 1);
+                args << m_display
+                     << QStringLiteral("-config")
+                     << QStringLiteral("/etc/X11/") + displayPtr()->seat()->name() + QStringLiteral(".conf")
+                     << QStringLiteral("-layout") << QStringLiteral("Nested")
+                     << QStringLiteral("-auth") << m_authPath
+                     << QStringLiteral("-background") << QStringLiteral("none")
+//                      << QStringLiteral("-noreset")
+                     << QStringLiteral("-seat") << displayPtr()->seat()->name();
+                if (displayPtr()->seat()->name() == QLatin1String("seat0")) {
+                    args << QStringLiteral("-keeptty");
+                } else {
+                    args << QStringLiteral("-sharevts");
+                }
+            } else {
+                args << QStringLiteral("-auth") << m_authPath
+                     << QStringLiteral("-background") << QStringLiteral("none")
+                     << QStringLiteral("-noreset")
+                     << QStringLiteral("-displayfd") << QString::number(pipeFds[1])
+                     << QStringLiteral("-seat") << displayPtr()->seat()->name();
+                if (displayPtr()->seat()->name() == QLatin1String("seat0")) {
+                    args << QStringLiteral("vt%1").arg(displayPtr()->terminalId());
+                }
             }
+
             qDebug() << "Running:"
                      << qPrintable(mainConfig.X11.ServerPath.get())
                      << qPrintable(args.join(QLatin1Char(' ')));
@@ -184,18 +202,20 @@ namespace SDDM {
             // from it may stuck even X server exit.
             close(pipeFds[1]);
 
-            QFile readPipe;
+            if (!mainConfig.X11.EnableNesting.get()) {
+                QFile readPipe;
 
-            if (!readPipe.open(pipeFds[0], QIODevice::ReadOnly)) {
-                qCritical("Failed to open pipe to start X Server ");
+                if (!readPipe.open(pipeFds[0], QIODevice::ReadOnly)) {
+                    qCritical("Failed to open pipe to start X Server ");
 
-                close(pipeFds[0]);
-                return false;
+                    close(pipeFds[0]);
+                    return false;
+                }
+                QByteArray displayNumber = readPipe.readLine();
+                displayNumber.prepend(QByteArray(":"));
+                displayNumber.remove(displayNumber.size() -1, 1); //trim trailing whitespace
+                m_display = QString::fromLocal8Bit(displayNumber);
             }
-            QByteArray displayNumber = readPipe.readLine();
-            displayNumber.prepend(QByteArray(":"));
-            displayNumber.remove(displayNumber.size() -1, 1); //trim trailing whitespace
-            m_display = QString::fromLocal8Bit(displayNumber);
 
             // close our pipe
             close(pipeFds[0]);
@@ -330,7 +350,7 @@ namespace SDDM {
             qWarning() << "Failed to find the sddm user. Owner of the auth file will not be changed.";
         else {
             if (chown(qPrintable(fileName), pw->pw_uid, pw->pw_gid) == -1)
-                qWarning() << "Failed to change owner of the auth file.";
+                qWarning() << "Failed to change owner of the auth file " << fileName << ".";
         }
     }
 }

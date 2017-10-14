@@ -19,6 +19,7 @@
 
 #include "SeatManager.h"
 
+#include "Configuration.h"
 #include "DaemonApp.h"
 #include "Seat.h"
 
@@ -109,7 +110,12 @@ namespace SDDM {
         connect(watcher, &QDBusPendingCallWatcher::finished, this, [=]() {
             watcher->deleteLater();
             foreach(const NamedSeatPath &seat, reply.value()) {
-                logindSeatAdded(seat.name, seat.path);
+                if (seat.name == QLatin1String("seat0"))
+                    logindSeatAdded(seat.name, seat.path);
+            }
+            foreach(const NamedSeatPath &seat, reply.value()) {
+                if (seat.name != QLatin1String("seat0"))
+                    logindSeatAdded(seat.name, seat.path);
             }
         });
 
@@ -118,14 +124,16 @@ namespace SDDM {
     }
 
     void SeatManager::createSeat(const QString &name) {
-        // create a seat
-        Seat *seat = new Seat(name, this);
+        if (!mainConfig.X11.EnableNesting.get() || name != QLatin1String("seat0")) {
+            // create a seat
+            Seat *seat = new Seat(name, this);
 
-        // add to the list
-        m_seats.insert(name, seat);
+            // add to the list
+            m_seats.insert(name, seat);
 
-        // emit signal
-        emit seatCreated(name);
+            // emit signal
+            emit seatCreated(name);
+        }
     }
 
     void SeatManager::removeSeat(const QString &name) {

@@ -5,7 +5,7 @@ Conflicts=getty@tty1.service
 After=systemd-user-sessions.service getty@tty1.service plymouth-quit.service systemd-logind.service
 
 [Service]
-ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/sddm
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/sddm-nest
 Restart=always
 
 [Install]
