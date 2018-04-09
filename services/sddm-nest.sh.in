@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ "$(/usr/bin/sed -n 's/.*startseat=\([^ ]*\).*/\1/p' /proc/cmdline)" = "true" ]; then
+	/usr/bin/sed -i "s/EnableNesting *= *.*/EnableNesting=true/" @CONFIG_FILE@
+else
+	/usr/bin/sed -i "s/EnableNesting *= *.*/EnableNesting=false/" @CONFIG_FILE@
+fi
+
+if [ "$(/usr/bin/sed -n "s/EnableNesting *= *\(.*\)$/\1/p" @CONFIG_FILE@)" = "true" ]; then
+	/usr/bin/xinit @CMAKE_INSTALL_FULL_BINDIR@/sddm -- :0 vt1
+else
+	/usr/bin/sddm
+fi
