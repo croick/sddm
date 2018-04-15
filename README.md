@@ -94,3 +94,7 @@ to set DPI to 192.
 
 As an alternative you can edit Xorg configuration ``xorg.conf``, please refer to the
 Xorg documentation.
+
+### Nested Multi-Seat
+
+It is possible to start sddm in a nested multi-seat environment. Refer to `NESTED.md` for more information.
