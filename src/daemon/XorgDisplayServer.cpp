@@ -161,7 +161,7 @@ namespace SDDM {
                             QString::number(displayPtr()->seat()->name().mid(4).toInt() + 1);
                 args << m_display
                      << QStringLiteral("-config")
-                     << QStringLiteral("/etc/X11/") + displayPtr()->seat()->name() + QStringLiteral(".conf")
+                     << mainConfig.X11.SeatConfDir.get() + QStringLiteral("/") + displayPtr()->seat()->name() + QStringLiteral(".conf")
                      << QStringLiteral("-layout") << QStringLiteral("Nested")
                      << QStringLiteral("-auth") << m_authPath
                      << QStringLiteral("-background") << QStringLiteral("none")

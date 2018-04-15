@@ -72,6 +72,7 @@ namespace SDDM {
             Entry(MinimumVT,           int,         MINIMUM_VT,                                 _S("The lowest virtual terminal number that will be used."));
             Entry(EnableHiDPI,         bool,        false,                                      _S("Enable Qt's automatic high-DPI scaling"));
             Entry(EnableNesting,       bool,        false,                                      _S("Enable use of nested driver for seats"));
+            Entry(SeatConfDir,         QString,     _S("/etc/X11"),                             _S("Directory for screen configurations of nested seats"));
         );
 
         Section(Wayland,
