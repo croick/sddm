@@ -63,7 +63,6 @@ namespace SDDM {
 
         // Create models
         m_sessionModel = new SessionModel();
-        m_userModel = new UserModel();
         m_keyboard = new KeyboardModel();
     }
 
@@ -113,6 +112,16 @@ namespace SDDM {
             m_themeConfig->setTo(configFile);
         else
             m_themeConfig = new ThemeConfig(configFile);
+
+        const bool themeNeedsAllUsers = m_themeConfig->value(QStringLiteral("needsFullUserModel"), true).toBool();
+        if(m_userModel && themeNeedsAllUsers && !m_userModel->containsAllUsers()) {
+            // The theme needs all users, but the current user model doesn't have them -> recreate
+            m_userModel->deleteLater();
+            m_userModel = nullptr;
+        }
+
+        if (!m_userModel)
+            m_userModel = new UserModel(themeNeedsAllUsers, nullptr);
 
         // Set default icon theme from greeter theme
         if (m_themeConfig->contains(QStringLiteral("iconTheme")))
@@ -196,7 +205,8 @@ namespace SDDM {
                 return;
 
             QString errors;
-            Q_FOREACH(const QQmlError &e, view->errors()) {
+            const auto errorList = view->errors();
+            for(const QQmlError &e : errorList) {
                 qWarning() << e;
                 errors += QLatin1String("\n") + e.toString();
             }
@@ -247,12 +257,18 @@ namespace SDDM {
                 m_keyboard->setNumLockState(false);
         }
 
+        // Set font
+        QVariant fontEntry = mainConfig.Theme.Font.get();
+        QFont font = fontEntry.value<QFont>();
+        if (!fontEntry.toString().isEmpty())
+            QGuiApplication::setFont(font);
+
         // Set session model on proxy
         m_proxy->setSessionModel(m_sessionModel);
 
         // Create views
-        QList<QScreen *> screens = qGuiApp->primaryScreen()->virtualSiblings();
-        Q_FOREACH (QScreen *screen, screens)
+        const QList<QScreen *> screens = qGuiApp->primaryScreen()->virtualSiblings();
+        for (QScreen *screen : screens)
             addViewForScreen(screen);
 
         // Handle screens
@@ -264,7 +280,7 @@ namespace SDDM {
 
     void GreeterApp::activatePrimary() {
         // activate and give focus to the window assigned to the primary screen
-        Q_FOREACH (QQuickView *view, m_views) {
+        for (QQuickView *view : qAsConst(m_views)) {
             if (view->screen() == QGuiApplication::primaryScreen()) {
                 view->requestActivate();
                 break;
