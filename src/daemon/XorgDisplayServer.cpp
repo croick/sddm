@@ -65,7 +65,7 @@ namespace SDDM {
         // create a random hexadecimal number
         const char *digits = "0123456789abcdef";
         for (int i = 0; i < 32; ++i)
-            m_cookie[i] = digits[dis(gen)];
+            m_cookie[i] = QLatin1Char(digits[dis(gen)]);
     }
 
     XorgDisplayServer::~XorgDisplayServer() {
@@ -186,8 +186,8 @@ namespace SDDM {
 
         process->setArguments(args);
         qDebug() << "Running:"
-                    << qPrintable(mainConfig.X11.ServerPath.get())
-                    << qPrintable(args.join(QLatin1Char(' ')));
+            << qPrintable(process->program())
+            << qPrintable(process->arguments().join(QLatin1Char(' ')));
         process->start();
 
         // wait for display server to start
@@ -222,7 +222,7 @@ namespace SDDM {
                 return false;
             }
             displayNumber.prepend(QByteArray(":"));
-            displayNumber.remove(displayNumber.size() -1, 1); //trim trailing whitespace
+            displayNumber.remove(displayNumber.size() -1, 1); // trim trailing whitespace
             m_display = QString::fromLocal8Bit(displayNumber);
         }
 
@@ -364,7 +364,7 @@ namespace SDDM {
             qWarning() << "Failed to find the sddm user. Owner of the auth file will not be changed.";
         else {
             if (chown(qPrintable(fileName), pw->pw_uid, pw->pw_gid) == -1)
-                qWarning() << "Failed to change owner of the auth file " << fileName << ".";
+                qWarning() << "Failed to change owner of the auth file.";
         }
     }
 }
